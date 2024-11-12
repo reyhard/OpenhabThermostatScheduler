@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thermostat Scheduler with Controls</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="scheduler">
+    <h3>Thermostat Scheduler Timeline</h3>
+
+    <!-- Days selector -->
+    <div id="days-selector">
+      <button class="day-button active" onclick="selectDay('Monday')">Monday</button>
+      <button class="day-button" onclick="selectDay('Tuesday')">Tuesday</button>
+      <button class="day-button" onclick="selectDay('Wednesday')">Wednesday</button>
+      <button class="day-button" onclick="selectDay('Thursday')">Thursday</button>
+      <button class="day-button" onclick="selectDay('Friday')">Friday</button>
+      <button class="day-button" onclick="selectDay('Saturday')">Saturday</button>
+      <button class="day-button" onclick="selectDay('Sunday')">Sunday</button>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timeline"></div>
+
+    <!-- Block Controls -->
+    <div id="block-controls">
+      <label for="block-type">Block Type:</label>
+      <select id="block-type" onchange="changeBlockType(event)">
+        <option value="NIGHT">Night (15°C)</option>
+        <option value="AWAY">Away (17°C)</option>
+        <option value="HOME">Home (20°C)</option>
+        <option value="WARM">Warm (23°C)</option>
+      </select>
+
+      <!-- Start Time Input -->
+      <label for="start-time">Start Time:</label>
+      <input type="time" id="start-time" onchange="updateStartTime(this.value)">
+
+      <!-- End Time Input -->
+      <label for="end-time">End Time:</label>
+      <input type="time" id="end-time" onchange="updateEndTime(this.value)">
+
+      <button onclick="removeBlock()">Remove Block</button>
+    </div>
+
+    <button id="add-block-btn" onclick="addBlock(activeDay)">Add Block</button>
+    <!-- Save Schedule Button -->
+    <button id="save-schedule-btn" onclick="saveSchedule()">Save Schedule</button>
+  </div>
+
+  <script src="config.js" type="module"></script>
+  <script src="scripts/api.js" type="module"></script>
+  <script src="scripts/main.js" type="module"></script>
+</body>
+</html>

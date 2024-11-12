@@ -1,0 +1,107 @@
+/* Main scheduler container */
+#scheduler {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+/* Days selection container */
+#days-selector {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Button styles for day selector */
+.day-button {
+  background-color: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.day-button.active, .day-button:hover {
+  background-color: #555;
+}
+
+/* Timeline container */
+#timeline {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background-color: #222;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 20px;
+  height: 60px;
+  position: relative;
+}
+
+/* Each block on the timeline */
+.timeline-block {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  border-radius: 5px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+  overflow: visible;
+  padding-right: 18px;
+}
+
+/* Selected block styling */
+.timeline-block.selected {
+  box-shadow: 0 0 10px 3px #ffcc00;
+  transform: scale(1.00);
+}
+
+/* Block colors for different temperature ranges */
+.temp-high { background-color: #e74c3c; } /* Red for temperatures > 22°C */
+.temp-normal { background-color: #f49f16; } /* Orange for temperatures between 16-22°C */
+.temp-medium { background-color: #aa8851; } /* Orange for temperatures between 16-22°C */
+.temp-low { background-color: #95a5a6; } /* Grey for temperatures < 16°C */
+
+/* Circular drag handle between blocks */
+.drag-handle {
+  width: 16px;
+  height: 16px;
+  background-color: #333;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: -8px; /* Move slightly outside the block */
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 5; /* Ensure it's above the block */
+  border: 2px solid #333; /* Border to make it more visible */
+}
+
+/* Control panel for block settings */
+#block-controls {
+  display: none;
+  margin-top: 20px;
+}
+
+/* Dropdown and remove button styles */
+#block-controls select, #block-controls button, #block-controls input {
+  padding: 8px;
+  margin: 0 5px;
+  border-radius: 5px;
+  font-size: 14px;
+}
