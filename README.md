@@ -5,6 +5,6 @@ A simple web application for managing thermostat schedules using OpenHAB REST AP
 
 Features
 
-    Add, edit, and delete schedules: Easily manage thermostat schedules by interacting with the OpenHAB REST API.
-    Visual Scheduler: A graphical interface allows for easy visualization and management of daily schedules.
-    Real-Time Updates: Fetches and updates schedules in real-time, ensuring changes are immediately reflected.
+* **Add, edit, and delete schedules**: Easily manage thermostat schedules by interacting with the OpenHAB REST API.
+* **Visual Scheduler**: A graphical interface allows for easy visualization and management of daily schedules
+* **Real-Time Updates**: Fetches and updates schedules in real-time, ensuring changes are immediately reflected.
