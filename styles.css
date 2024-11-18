@@ -30,14 +30,33 @@
   background-color: #555;
 }
 
+.control-button {
+  background-color: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  margin-top: 40px;
+}
+
 /* Timeline container */
+#timeline-container {
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+}
+
 #timeline {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 97.5%;
+  left: 1%;
   background-color: #222;
   border-radius: 10px;
-  padding: 10px;
+  padding: 3px;
   margin-top: 20px;
   height: 60px;
   position: relative;
@@ -56,13 +75,51 @@
   cursor: pointer;
   transition: transform 0.2s;
   overflow: visible;
-  padding-right: 18px;
+  padding-right: 0px;
 }
 
 /* Selected block styling */
 .timeline-block.selected {
-  box-shadow: 0 0 10px 3px #ffcc00;
-  transform: scale(1.00);
+  box-shadow: 0 0 10px 3px #83093e;
+}
+
+#time-indicators {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  margin-top: -11px;
+  width: 100%;
+}
+
+.time-indicator {
+  position: relative;
+  text-align: center;
+  width: 3.5%; /* Adjust based on how many markers you have */
+}
+
+.time-indicator .label {
+  position: absolute;
+  top: 20px; /* Space for text below the line */
+}
+
+.time-indicator .long-line,
+.time-indicator .short-line {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  transform: translateX(0%);
+  width: 3px;
+  background-color: #666;
+}
+
+.long-line {
+  height: 15px;
+}
+
+.short-line {
+  height: 8px;
 }
 
 /* Block colors for different temperature ranges */
@@ -88,14 +145,14 @@
   cursor: ew-resize;
   font-size: 12px;
   font-weight: bold;
-  z-index: 5; /* Ensure it's above the block */
+  z-index: 1; /* Ensure it's above the block */
   border: 2px solid #333; /* Border to make it more visible */
 }
 
 /* Control panel for block settings */
 #block-controls {
   display: none;
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 /* Dropdown and remove button styles */

@@ -1,5 +1,4 @@
 import { saveRule, deleteRule, getRules } from './api.js';
-//import { initializeUI, renderTimeline } from './ui.js';
 
 let schedules = {
   Monday: [],
@@ -61,6 +60,11 @@ function renderTimeline() {
       const handleDiv = document.createElement("div");
       handleDiv.className = "drag-handle";
       handleDiv.onmousedown = (e) => handleDragStart(e, index);
+      // Touch event for dragging on touchscreen
+      handleDiv.ontouchstart = (e) => {
+        e.preventDefault(); // Prevent scrolling during touch
+        handleDragStart(e.touches[0], index);
+      };
       blockDiv.appendChild(handleDiv);
     }
 
@@ -161,33 +165,61 @@ function calculateDuration(startTime, endTime) {
   const endTotalMinutes = endHour * 60 + endMinute;
   return endTotalMinutes - startTotalMinutes;
 }
-
 function handleDragStart(e, index) {
-  e.preventDefault();
-  document.onmousemove = (event) => handleDragging(event, index);
-  document.onmouseup = handleDragEnd;
-}
 
+  // Check if the event is a touch event or a mouse event
+  const startEvent = e.touches ? e.touches[0] : e;
+
+  // Set up event listeners for dragging (mousemove/touchmove)
+  document.onmousemove = (event) => handleDragging(event, index);
+  document.ontouchmove = (event) => handleDragging(event.touches[0], index);
+
+  // Set up event listeners for ending the drag (mouseup/touchend)
+  document.onmouseup = handleDragEnd;
+  document.ontouchend = handleDragEnd;
+}
 function handleDragging(e, index) {
   const timeline = document.getElementById("timeline");
   const timelineRect = timeline.getBoundingClientRect();
+
+  // Calculate the x-coordinate for touch or mouse event
   const x = e.clientX - timelineRect.left;
   const percent = x / timelineRect.width;
-  const minutes = Math.round(percent * 1440);
+
+  // Convert percentage to time in minutes and then to hours/minutes format
+  const minutes = Math.round(percent * 1440); // Total minutes in a day (24 * 60)
   const hours = Math.floor(minutes / 60).toString().padStart(2, "0");
   const mins = (minutes % 60).toString().padStart(2, "0");
 
   const blocks = schedules[activeDay];
+
+  // Only proceed if we're not trying to adjust the last block
   if (index < blocks.length - 1) {
-    blocks[index + 1].startTime = `${hours}:${mins}`;
-    updateBlockTimes();
-    renderTimeline();
+    // Get the previous block's end time in minutes
+    const currentBlockEnd = blocks[index+1].endTime.split(":");
+    const previousBlockEnd = blocks[index].startTime.split(":");
+    const previousEndMinutes = parseInt(previousBlockEnd[0], 10) * 60 + parseInt(previousBlockEnd[1], 10);
+    const currentEndMinutes = parseInt(currentBlockEnd[0], 10) * 60 + parseInt(currentBlockEnd[1], 10);
+
+    // Calculate the current block's proposed start time in minutes
+    const newStartMinutes = minutes;
+
+    // Check if the new start time is at least 5 minutes after the previous block's end time
+    if (newStartMinutes >= previousEndMinutes + 5 && newStartMinutes <= currentEndMinutes - 5) {
+      // Update the next block's start time based on the drag position
+      blocks[index + 1].startTime = `${hours}:${mins}`;
+      updateBlockTimes();
+      renderTimeline();
+    }
   }
 }
 
 function handleDragEnd() {
+  // Remove both mouse and touch event listeners when dragging ends
   document.onmousemove = null;
+  document.ontouchmove = null;
   document.onmouseup = null;
+  document.ontouchend = null;
 }
 
 // Function to convert block time to a cron expression
@@ -344,8 +376,46 @@ function saveAllBlocksAsRules() {
     blocks.forEach(block => saveBlockAsRule(block, day));
   }
 }
+function createTimeIndicators() {
+  const timeIndicators = document.getElementById("time-indicators");
+  timeIndicators.innerHTML = ""; // Clear existing indicators
+
+  const startHour = 0;
+  const endHour = 24;
+  const interval = 3; // Interval for visible labels (every 3 hours)
+
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const timeIndicator = document.createElement("div");
+    timeIndicator.className = "time-indicator";
+
+    // Set the position as a percentage of the timeline width
+    const positionPercent = (hour / endHour);
+    timeIndicator.style.left = `${positionPercent}%`;
+
+    // Add a label and longer line at the specified interval
+    if (hour % interval === 0) {
+      const timeLabel = document.createElement("div");
+      timeLabel.className = "label";
+      timeLabel.innerText = hour.toString().padStart(2, "0") + ":00";
+      timeIndicator.appendChild(timeLabel);
+
+      const longLine = document.createElement("div");
+      longLine.className = "long-line";
+      timeIndicator.appendChild(longLine);
+    } else {
+      // Short line for other hours
+      const shortLine = document.createElement("div");
+      shortLine.className = "short-line";
+      timeIndicator.appendChild(shortLine);
+    }
+
+    timeIndicators.appendChild(timeIndicator);
+  }
+}
 
 selectDay('Monday');
+// Call this function to generate the indicators when the page loads
+createTimeIndicators();
 
 console.log(schedules); // Output: "10:00"
 

@@ -21,7 +21,10 @@
     </div>
 
     <!-- Timeline -->
-    <div id="timeline"></div>
+    <div id="timeline-container">
+      <div id="timeline"></div>
+      <div id="time-indicators"></div>
+    </div>
 
     <!-- Block Controls -->
     <div id="block-controls">
@@ -44,9 +47,9 @@
       <button onclick="removeBlock()">Remove Block</button>
     </div>
 
-    <button id="add-block-btn" onclick="addBlock(activeDay)">Add Block</button>
+    <button class="control-button" id="add-block-btn" onclick="addBlock(activeDay)">Add Block</button>
     <!-- Save Schedule Button -->
-    <button id="save-schedule-btn" onclick="saveSchedule()">Save Schedule</button>
+    <button class="control-button" id="save-schedule-btn" onclick="saveSchedule()">Save Schedule</button>
   </div>
 
   <script src="config.js" type="module"></script>
