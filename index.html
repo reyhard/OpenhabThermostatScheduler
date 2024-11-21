@@ -21,15 +21,32 @@
     </div>
 
     <!-- Timeline -->
-    <div id="timeline-container">
-      <div id="timeline"></div>
-      <div id="time-indicators"></div>
+    <div id="timeline-container1" class="timeline-container">
+      <div id="timeline1" class="timeline"></div>
+      <div id="time-indicators1" class="time-indicators"></div>
+    </div>
+    <div id="timeline-container2" class="timeline-container">
+      <div id="timeline2" class="timeline"></div>
+      <div id="time-indicators2" class="time-indicators"></div>
+    </div>
+    <div id="timeline-container3" class="timeline-container">
+      <div id="timeline3" class="timeline"></div>
+      <div id="time-indicators3" class="time-indicators"></div>
+    </div>
+    <div id="timeline-container4" class="timeline-container">
+      <div id="timeline4" class="timeline"></div>
+      <div id="time-indicators4" class="time-indicators"></div>
+    </div>
+    <div id="timeline-container5" class="timeline-container">
+      <div id="timeline5" class="timeline"></div>
+      <div id="time-indicators5" class="time-indicators"></div>
     </div>
 
     <!-- Block Controls -->
     <div id="block-controls">
+      <button class="control-button" id="add-block-btn" onclick="addBlock(activeZone, activeDay)">Add Block</button>
       <label for="block-type">Block Type:</label>
-      <select id="block-type" onchange="changeBlockType(event)">
+      <select id="block-type" onchange="changeBlockType(activeZone, event)">
         <option value="NIGHT">Night (15°C)</option>
         <option value="AWAY">Away (17°C)</option>
         <option value="HOME">Home (20°C)</option>
@@ -44,12 +61,11 @@
       <label for="end-time">End Time:</label>
       <input type="time" id="end-time" onchange="updateEndTime(this.value)">
 
-      <button onclick="removeBlock()">Remove Block</button>
+      <button class="control-button" onclick="removeBlock()">Remove Block</button>
     </div>
 
-    <button class="control-button" id="add-block-btn" onclick="addBlock(activeDay)">Add Block</button>
     <!-- Save Schedule Button -->
-    <button class="control-button" id="save-schedule-btn" onclick="saveSchedule()">Save Schedule</button>
+    <button class="control-button" id="save-schedule-btn" onclick="saveScheduleDay()">Save Schedule</button>
   </div>
 
   <script src="config.js" type="module"></script>
