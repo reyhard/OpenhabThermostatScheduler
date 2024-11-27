@@ -1,20 +1,50 @@
-import { saveRule, deleteRule, getRules } from './api.js';
+import { saveRule, deleteRule, getRules, getItemState, updateItemState  } from './api.js';
 
 let schedules = {
 
-  Zone1: { TimelineName: "timeline1", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone2: { TimelineName: "timeline2", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone3: { TimelineName: "timeline3", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone4: { TimelineName: "timeline4", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone5: { TimelineName: "timeline5", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone1: { TimelineName: "timeline1", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone2: { TimelineName: "timeline2", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone3: { TimelineName: "timeline3", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone4: { TimelineName: "timeline4", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone5: { TimelineName: "timeline5", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
 };
+
+const zones = [
+  { zoneName: "Zone1", id: 'general', name: 'Generalna', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
+  { zoneName: "Zone2", id: 'kitchen', name: 'Kuchnia',  scriptItem: 'Thermostat_HeatingZone_Kitchen_Cfg' },
+  { zoneName: "Zone3", id: 'living-room', name: 'Salon', scriptItem: 'Thermostat_HeatingZone_LivingRoom_Cfg' },
+  { zoneName: "Zone4", id: 'bedroom', name: 'Sypialnia', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
+  { zoneName: "Zone5", id: 'bathroom', name: 'Łazienka', scriptItem: 'Thermostat_HeatingZone_Bathroom_Cfg' }
+];
 const zoneNames = ['Generalna', 'Kuchnia', 'Salon', 'Sypialnia', 'Łazienka'];
 
 let activeDay = 'Monday';
 let activeZone = 'Zone1';
 let selectedBlockIndex = null; // Track selected block index
 
-function selectDay(day) {
+function parseAndEvaluate(setting, dynamicContext = {}) {
+  try {
+    // Wrap the setting in a template literal evaluator using dynamic context
+    const evaluator = new Function(
+      ...Object.keys(dynamicContext), // Pass variable names as arguments
+      `return \`${setting}\`;`       // Evaluate as a template literal
+    );
+
+    // Pass the corresponding values dynamically
+    return evaluator(...Object.values(dynamicContext));
+  } catch (error) {
+    console.error('Failed to evaluate dynamically:', error);
+    throw error;
+  }
+}
+
+function selectDay(day = null) {
+
+  if (!day) {
+    // Get current day of the week
+    day = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  }
+
   activeDay = day;
   window.activeDay = activeDay;
   document.querySelectorAll(".day-button").forEach(button => button.classList.remove("active"));
@@ -205,6 +235,7 @@ function calculateDuration(startTime, endTime) {
   const endTotalMinutes = endHour * 60 + endMinute;
   return endTotalMinutes - startTotalMinutes;
 }
+
 function handleDragStart(e, index) {
 
   // Check if the event is a touch event or a mouse event
@@ -218,6 +249,7 @@ function handleDragStart(e, index) {
   document.onmouseup = handleDragEnd;
   document.ontouchend = handleDragEnd;
 }
+
 function handleDragging(e, index) {
   const timeline = document.getElementById("timeline");
   const timelineRect = timeline.getBoundingClientRect();
@@ -288,6 +320,7 @@ function convertCronToTime(cronExpression) {
 async function saveBlockAsRule(block, zone, day) {
   if (block.id == 0) { return } // Skip first block
   const cronExpression = convertTimeToCron(block.startTime, day);
+  const scriptData = parseAndEvaluate(schedules[zone]["script"],{block})
   const ruleData = {
     uid: `schedule_${zone}_${day}_${block.id}`, // Unique identifier
     name: `Heating Schedule for ${day} at ${block.temperature}°C`,
@@ -309,7 +342,7 @@ async function saveBlockAsRule(block, zone, day) {
         type: "script.ScriptAction",
         configuration: {
           type: "application/vnd.openhab.dsl.rule",
-          script: `` // Heating_Item.sendCommand(${block.temperature})
+          script: scriptData // Heating_Item.sendCommand(${block.temperature})
         }
       }
     ]
@@ -404,22 +437,17 @@ function getTypeFromTemperature(temp) {
     return "WARM";
 }
 
-async function saveScheduleDay() {
-  Object.keys(schedules).forEach(zone => saveSchedule(zone));
-  alert(`Schedule for ${activeDay} saved!`);
+async function saveScheduleDay(day) {
+  Object.keys(schedules).forEach(zone => saveSchedule(zone,day));
+  alert(`Schedule for ${day} saved!`);
 }
 
-async function saveSchedule(zone) {
-  await removeExistingRulesForDay(zone, activeDay);
-  const blocks = schedules[zone][activeDay];
-  blocks.forEach(block => saveBlockAsRule(block, zone, activeDay));
+async function saveSchedule(zone,day) {
+  await removeExistingRulesForDay(zone, day);
+  const blocks = schedules[zone][day];
+  blocks.forEach(block => saveBlockAsRule(block, zone, day));
 }
-// Sample usage to save all blocks in a schedule as rules
-function saveAllBlocksAsRules() {
-  for (const [day, blocks] of Object.entries(schedules)) {
-    blocks.forEach(block => saveBlockAsRule(block, zone, day));
-  }
-}
+
 function createTimeIndicators(elementId) {
   const timeIndicators = document.getElementById(elementId);
   timeIndicators.innerHTML = ""; // Clear existing indicators
@@ -467,6 +495,122 @@ Object.keys(schedules).forEach(zone => renderTimeline(zone));
 
 console.log(schedules); // Output: "10:00"
 
+const settingsButton = document.getElementById('settings-button');
+const modal = document.getElementById('zone-settings-modal');
+const overlay = document.getElementById('modal-overlay');
+const closeModalButton = document.getElementById('close-modal');
+
+// Show the modal
+settingsButton.addEventListener('click', () => {
+  modal.style.display = 'block';
+  overlay.style.display = 'block';
+  populateZoneSelect(); // Populate dropdown with zone names
+});
+
+// Close the modal
+closeModalButton.addEventListener('click', () => {
+  modal.style.display = 'none';
+  overlay.style.display = 'none';
+});
+
+// Close the modal when clicking outside of it
+overlay.addEventListener('click', () => {
+  modal.style.display = 'none';
+  overlay.style.display = 'none';
+});
+
+function populateZoneSelect() {
+  const zoneSelect = document.getElementById('zone-select-modal');
+  zoneSelect.innerHTML = zones.map(zone => `<option value="${zone.id}">${zone.name}</option>`).join('');
+
+  // Trigger a change event to load the first zone's script
+  zoneSelect.dispatchEvent(new Event('change'));
+}
+const scriptTextarea = document.getElementById('script-textarea-modal');
+const saveZoneSettingsButton = document.getElementById('save-zone-settings-modal');
+
+// Load the selected zone's script into the editor
+document.getElementById('zone-select-modal').addEventListener('change', (event) => {
+  const selectedZoneId = event.target.value;
+  const zone = zones.find(z => z.id === selectedZoneId);
+  if (zone) {
+    loadZoneSettings(zone)
+  }
+});
+
+async function initializeZoneSettings(zones) {
+  for (const zone of zones) {
+    try {
+      await loadZoneSettings(zone);
+    } catch (error) {
+      console.error(`Error loading settings for zone ${zone.name}:`, error);
+    }
+  }
+}
+
+async function loadZoneSettings(zone) {
+  try {
+    const script = await getItemState(zone.scriptItem); // Fetch script from OpenHab
+    console.log(`Loaded script for zone ${zone.name}:`, script);
+    scriptTextarea.value = script;
+    schedules[zone.zoneName]["script"] = script;
+  } catch (error) {
+    console.error(`Failed to load settings for zone ${zone.name}:`, error);
+  }
+}
+
+async function saveZoneSettings(zone, script) {
+  try {
+    await updateItemState(zone.scriptItem, script); // Save script to OpenHab
+    console.log(`Settings saved for zone ${zone.name}`);
+  } catch (error) {
+    console.error(`Failed to save settings for zone ${zone.name}:`, error);
+  }
+}
+
+// Save on script update
+saveZoneSettingsButton.addEventListener('click', () => {
+  const selectedZoneId = document.getElementById('zone-select-modal').value;
+  const zone = zones.find(z => z.id === selectedZoneId);
+  const updatedScript = scriptTextarea.value;
+  if (zone) {
+    saveZoneSettings(zone,updatedScript);
+  }
+});
+initializeZoneSettings(zones)
+
+
+// Open the modal window
+function openCopyModal() {
+  document.getElementById('copyModal').style.display = 'block';
+}
+
+// Close the modal window
+function closeCopyModal() {
+  document.getElementById('copyModal').style.display = 'none';
+}
+
+// Confirm and perform the copy schedule action
+async function confirmCopySchedule() {
+  const toDay = document.getElementById('targetDay').value;
+
+  if (activeDay === toDay) {
+    alert("You cannot copy the schedule to the same day!");
+    closeCopyModal();
+    return;
+  }
+
+  // Perform copy
+  Object.keys(schedules).forEach(zone => {
+    schedules[zone][toDay] = schedules[zone][activeDay]
+  });
+
+  // Save the copied schedule
+  await saveScheduleDay(toDay);
+
+  alert(`Schedule successfully copied from ${activeDay} to ${toDay}!`);
+  closeCopyModal();
+}
 
 window.addBlock = addBlock;
 window.removeBlock = removeBlock;
@@ -475,5 +619,8 @@ window.updateStartTime = updateStartTime;
 window.updateEndTime = updateEndTime;
 window.changeBlockType = changeBlockType;
 window.saveScheduleDay = saveScheduleDay;
+window.openCopyModal = openCopyModal;
+window.closeCopyModal = closeCopyModal;
+window.confirmCopySchedule = confirmCopySchedule;
 window.activeDay = activeDay;
 window.activeZone = activeZone;

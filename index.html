@@ -9,6 +9,26 @@
   <div id="scheduler">
     <h3>Thermostat Scheduler Timeline</h3>
 
+    <div id="settings-button-container" style="position: absolute; top: 10px; right: 10px;">
+      <button id="settings-button" style="padding: 8px 16px; font-size: 16px;">⚙️ Settings</button>
+    </div>
+
+    <div id="zone-settings-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: white; border-radius: 8px; padding: 20px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); width: 400px;">
+      <h2>Zone Settings</h2>
+      <label for="zone-select-modal">Select Zone:</label>
+      <select id="zone-select-modal" style="width: 100%; margin-bottom: 15px;">
+        <!-- Options will be dynamically populated -->
+      </select>
+
+      <label for="script-textarea-modal">Script Editor:</label>
+      <textarea id="script-textarea-modal" rows="8" style="width: 100%; margin-bottom: 15px;"></textarea>
+
+      <button id="save-zone-settings-modal" style="padding: 8px 16px; margin-right: 10px;">Save</button>
+      <button id="close-modal" style="padding: 8px 16px;">Close</button>
+    </div>
+
+    <div id="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
     <!-- Days selector -->
     <div id="days-selector">
       <button class="day-button active" onclick="selectDay('Monday')">Monday</button>
@@ -61,11 +81,30 @@
       <label for="end-time">End Time:</label>
       <input type="time" id="end-time" onchange="updateEndTime(this.value)">
 
-      <button class="control-button" onclick="removeBlock()">Remove Block</button>
+      <button class="control-button" onclick="removeBlock(activeZone)">Remove Block</button>
     </div>
 
+    <!-- Modal Window -->
+    <div id="copyModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close" onclick="closeCopyModal()">&times;</span>
+        <h2>Copy Schedule</h2>
+        <p>Select a target day to copy the schedule:</p>
+        <select id="targetDay">
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+        <button onclick="confirmCopySchedule()">Confirm</button>
+      </div>
+    </div>
     <!-- Save Schedule Button -->
-    <button class="control-button" id="save-schedule-btn" onclick="saveScheduleDay()">Save Schedule</button>
+    <button class="control-button" id="save-schedule-btn" onclick="saveScheduleDay(activeDay)">Save Schedule</button>
+    <button class="control-button" onclick="openCopyModal()">Copy Schedule</button>
   </div>
 
   <script src="config.js" type="module"></script>
