@@ -91,6 +91,11 @@
   padding-right: 0px;
 }
 
+.timeline-block i {
+  margin-right: 5px;
+  font-size: 18px;
+}
+
 /* Selected block styling */
 .timeline-block.selected {
   box-shadow: 0 0 10px 3px #83093e;

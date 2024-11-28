@@ -17,7 +17,16 @@ const zones = [
   { zoneName: "Zone5", id: 'bathroom', name: 'Łazienka', scriptItem: 'Thermostat_HeatingZone_Bathroom_Cfg' }
 ];
 const zoneNames = ['Generalna', 'Kuchnia', 'Salon', 'Sypialnia', 'Łazienka'];
-
+const blockTypes = [
+  { id: 'OFF', displayName: 'Off', temperature: 0, color: '#842614', command: 'OFF', icon: 'fa-snowflake'},
+  { id: 'ON', displayName: 'On', temperature: 1, color: '#428451', command: 'ON', icon: 'fa-fire' },
+  { id: 'NIGHT', displayName: 'Night (15°C)', temperature: 15, color: '#95a5a6', command: '15', icon: 'fa-moon' },
+  { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', command: '16', icon: 'fa-person-hiking' },
+  { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', command: '20', icon: 'fa-house' },
+  { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', command: '21', icon: 'fa-computer' },
+  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', command: '23', icon: 'fa-power-off' }
+];
+const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 let activeDay = 'Monday';
 let activeZone = 'Zone1';
 let selectedBlockIndex = null; // Track selected block index
@@ -38,6 +47,35 @@ function parseAndEvaluate(setting, dynamicContext = {}) {
   }
 }
 
+function populateBlockTypeDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+
+  // Clear existing options
+  dropdown.innerHTML = '';
+
+  // Populate options dynamically
+  blockTypes.forEach(block => {
+    const option = document.createElement('option');
+    option.value = block.id;
+    option.textContent = block.displayName;
+    //option.style.color = block.color; // Optional: Add color for visual feedback
+    dropdown.appendChild(option);
+  });
+}
+
+function getPreviousDay(day) {
+
+  const currentIndex = daysOfWeek.indexOf(day);
+  if (currentIndex === -1) {
+    throw new Error('Invalid day of the week');
+  }
+
+  // Calculate the previous day index
+  const previousIndex = (currentIndex - 1 + daysOfWeek.length) % daysOfWeek.length;
+
+  return daysOfWeek[previousIndex];
+}
+
 function selectDay(day = null) {
 
   if (!day) {
@@ -54,11 +92,6 @@ function selectDay(day = null) {
   Object.keys(schedules).forEach(zone => {
     loadScheduleForDay(zone, day);
   });
-}
-
-function switchZone(zone) {
-  activeZone = zone;
-  renderTimeline(zone); // Re-render the timeline for the selected zone
 }
 
 function addBlock(zone, day) {
@@ -98,40 +131,60 @@ function addZoneNames(zoneNames) {
     }
   });
 }
-
 function renderTimeline(zone) {
   const timeline = document.getElementById(schedules[zone]["TimelineName"]);
   timeline.innerHTML = ""; // Clear existing blocks
   const blocks = schedules[zone][activeDay];
 
   blocks.forEach((block, index) => {
+    // Find block type definition in blockTypes
+    const blockType = blockTypes.find(bt => bt.id === block.type);
+
+    // Create block element
     const blockDiv = document.createElement("div");
-    blockDiv.className = `timeline-block ${getBlockColorClass(block.temperature)}`;
-    blockDiv.innerText = `${block.type} ${block.startTime}`;
+    blockDiv.className = "timeline-block";
+    blockDiv.style.backgroundColor = blockType?.color || "#CCCCCC"; // Default color if not found
+
+    // Add icon
+    const iconElement = document.createElement("i");
+    if (blockType?.icon) {
+      iconElement.className = `fa ${blockType.icon}`;
+    }
+    blockDiv.appendChild(iconElement);
+
+    // Add block label
+    const label = document.createElement("span");
+    label.innerText = ` ${blockType?.displayName || block.type}`;
+    blockDiv.appendChild(label);
 
     blockDiv.onclick = () => selectBlock(zone, index);
 
+    // Calculate block width based on duration
     const durationInMinutes = calculateDuration(block.startTime, block.endTime);
     blockDiv.style.width = `${(durationInMinutes / 1440) * 100}%`;
 
+    // Add drag handle for resizing (if not the last block)
     if (index < blocks.length - 1) {
       const handleDiv = document.createElement("div");
       handleDiv.className = "drag-handle";
-      handleDiv.onmousedown = (e) => handleDragStart(e, index);
+      handleDiv.onmousedown = (e) => handleDragStart(e, index, zone);
+
       // Touch event for dragging on touchscreen
       handleDiv.ontouchstart = (e) => {
         e.preventDefault(); // Prevent scrolling during touch
-        handleDragStart(e.touches[0], index);
+        handleDragStart(e.touches[0], index, zone);
       };
       blockDiv.appendChild(handleDiv);
     }
 
+    // Highlight selected block
     if (index === selectedBlockIndex) {
       blockDiv.classList.add("selected");
     }
 
     timeline.appendChild(blockDiv);
   });
+
 
   document.getElementById("block-controls").style.display = selectedBlockIndex !== null ? "block" : "none";
 
@@ -169,12 +222,15 @@ function selectBlock(zone, index) {
 }
 
 function changeBlockType(zone, event) {
-  const type = event.target.value;
+  const selectedBlockId = event.target.value;
+  const selectedBlock = blockTypes.find(block => block.id === selectedBlockId);
+
   const temperatureMap = { NIGHT: 15, AWAY: 17, HOME: 20, WARM: 23 };
   const blocks = schedules[zone][activeDay];
   if (selectedBlockIndex !== null) {
-    blocks[selectedBlockIndex].type = type;
-    blocks[selectedBlockIndex].temperature = temperatureMap[type];
+    blocks[selectedBlockIndex].type = selectedBlockId;
+    blocks[selectedBlockIndex].temperature = selectedBlock.temperature;
+    blocks[selectedBlockIndex].command = selectedBlock.command;
     renderTimeline(zone);
   }
 }
@@ -236,22 +292,22 @@ function calculateDuration(startTime, endTime) {
   return endTotalMinutes - startTotalMinutes;
 }
 
-function handleDragStart(e, index) {
+function handleDragStart(e, index, zone) {
 
   // Check if the event is a touch event or a mouse event
   const startEvent = e.touches ? e.touches[0] : e;
 
   // Set up event listeners for dragging (mousemove/touchmove)
-  document.onmousemove = (event) => handleDragging(event, index);
-  document.ontouchmove = (event) => handleDragging(event.touches[0], index);
+  document.onmousemove = (event) => handleDragging(event, index, zone);
+  document.ontouchmove = (event) => handleDragging(event.touches[0], index, zone);
 
   // Set up event listeners for ending the drag (mouseup/touchend)
   document.onmouseup = handleDragEnd;
   document.ontouchend = handleDragEnd;
 }
 
-function handleDragging(e, index) {
-  const timeline = document.getElementById("timeline");
+function handleDragging(e, index, zone) {
+  const timeline = document.getElementById(schedules[zone]["TimelineName"]);
   const timelineRect = timeline.getBoundingClientRect();
 
   // Calculate the x-coordinate for touch or mouse event
@@ -263,7 +319,7 @@ function handleDragging(e, index) {
   const hours = Math.floor(minutes / 60).toString().padStart(2, "0");
   const mins = (minutes % 60).toString().padStart(2, "0");
 
-  const blocks = schedules[activeZone][activeDay];
+  const blocks = schedules[zone][activeDay];
 
   // Only proceed if we're not trying to adjust the last block
   if (index < blocks.length - 1) {
@@ -280,8 +336,8 @@ function handleDragging(e, index) {
     if (newStartMinutes >= previousEndMinutes + 5 && newStartMinutes <= currentEndMinutes - 5) {
       // Update the next block's start time based on the drag position
       blocks[index + 1].startTime = `${hours}:${mins}`;
-      updateBlockTimes(activeZone);
-      renderTimeline(activeZone);
+      updateBlockTimes(zone);
+      renderTimeline(zone);
     }
   }
 }
@@ -323,8 +379,8 @@ async function saveBlockAsRule(block, zone, day) {
   const scriptData = parseAndEvaluate(schedules[zone]["script"],{block})
   const ruleData = {
     uid: `schedule_${zone}_${day}_${block.id}`, // Unique identifier
-    name: `Heating Schedule for ${day} at ${block.temperature}°C`,
-    description: `${block.temperature}°C`,
+    name: `Heating Schedule for ${zone}, ${day} at ${block.temperature}°C`,
+    description: `${block.type}`,
     tags: ["Schedule", "Heating"],
     triggers: [
       {
@@ -355,10 +411,8 @@ async function saveBlockAsRule(block, zone, day) {
   }
 }
 // Function to get all rules for a specific day from openHAB
-async function getRulesForDay(zone, day) {
+async function getRulesForDay(zone, day, data) {
     try {
-        const data = await getRules();
-
         // Filter for rules that match the day
         const dayRules = data.filter(rule => rule.uid.startsWith(`schedule_${zone}_${day}`));
 
@@ -377,7 +431,8 @@ async function getRulesForDay(zone, day) {
     }
 }
 async function removeExistingRulesForDay(zone, day) {
-    const rulesForDay = await getRulesForDay(zone, day);
+    const rules = await getRules();
+    const rulesForDay = await getRulesForDay(zone, day, rules);
     console.log(`All rules in ${zone} for ${day} removed.`,rulesForDay);
     for (const rule of rulesForDay) {
         await deleteRule(rule.uid);
@@ -388,21 +443,42 @@ async function removeExistingRulesForDay(zone, day) {
 
 
 // Function to populate blocks for a given day based on the rules fetched
-async function loadScheduleForDay(zone, day) {
-    const rules = await getRulesForDay(zone, day);
+async function loadScheduleForDay(zone, day, data = null) {
+    if (!data) {
+      data = await getRules();
+    }
+    const rules = await getRulesForDay(zone, day, data);
     const blocks = [];
+    let firstBlock = [];
+    const blocksPreviousDay = schedules[zone][getPreviousDay(day)];
+    if(blocksPreviousDay.length == 0)
+    {
+      firstBlock = {
+        id: 0,
+        type: 'NIGHT',
+        command: "15",
+        temperature: '15',
+        startTime: "0:00",
+        endTime: '24:00'
+      }
+    }else{
+      firstBlock = {
+        id: 0,
+        type: blocksPreviousDay[blocksPreviousDay.length - 1].type,
+        command: blocksPreviousDay[blocksPreviousDay.length - 1].command,
+        temperature: blocksPreviousDay[blocksPreviousDay.length - 1].temperature,
+        startTime: "0:00",
+        endTime: '24:00'
+      }
+    }
 
-    blocks.push({
-            id: 0,
-            type: 'NIGHT', // Helper function to match type
-            temperature: '15',
-            startTime: "0:00",
-            endTime: '24:00'
-        });
+    blocks.push(firstBlock);
     rules.forEach((rule, index) => {
         const cronExpression = rule.triggers[0].configuration.cronExpression;
         const startTime = convertCronToTime(cronExpression.split(" ").slice(1, 3).join(" ")); // Extract HH:MM from cron
-        const temperature = rule.description.match(/(\d+)\s*°C/)[1];
+        const type = rule.description;
+        const selectedBlock = blockTypes.find(block => block.id === type);
+
 
         // Determine the end time
         const nextRule = rules[index + 1];
@@ -414,8 +490,9 @@ async function loadScheduleForDay(zone, day) {
 
         blocks.push({
             id: index+1,
-            type: getTypeFromTemperature(temperature), // Helper function to match type
-            temperature: parseInt(temperature, 10),
+            type: selectedBlock.id, // Helper function to match type
+            command: selectedBlock.command,
+            temperature: selectedBlock.temperature,
             startTime: startTime,
             endTime: endTime
         });
@@ -428,14 +505,18 @@ async function loadScheduleForDay(zone, day) {
     schedules[zone][day] = blocks;
     renderTimeline(zone);
 }
-// Helper function to get block type based on temperature
-function getTypeFromTemperature(temp) {
-    if (temp == 15) return "NIGHT";
-    if (temp == 17) return "AWAY";
-    if (temp == 20) return "HOME";
-    if (temp == 23) return "WARM";
-    return "WARM";
+
+async function loadAllSchedules() {
+  const rules = await getRules();
+  Object.keys(schedules).forEach(zone => {
+    daysOfWeek.forEach(day => {
+      loadScheduleForDay(zone, day, rules);
+    });
+  });
+
+  console.log('Schedules for all zones and days loaded.');
 }
+
 
 async function saveScheduleDay(day) {
   Object.keys(schedules).forEach(zone => saveSchedule(zone,day));
@@ -486,7 +567,6 @@ function createTimeIndicators(elementId) {
 }
 
 addZoneNames(zoneNames);
-selectDay('Monday');
 // Call this function to generate the indicators when the page loads
 document.querySelectorAll('[id^="time-indicators"]').forEach(element => {
   createTimeIndicators(element.id);
@@ -611,6 +691,10 @@ async function confirmCopySchedule() {
   alert(`Schedule successfully copied from ${activeDay} to ${toDay}!`);
   closeCopyModal();
 }
+loadAllSchedules();
+selectDay();
+
+populateBlockTypeDropdown('block-type');
 
 window.addBlock = addBlock;
 window.removeBlock = removeBlock;
