@@ -42,6 +42,10 @@
   margin-top: 40px;
 }
 
+.control-button[disabled] {
+  background-color: #868686;
+}
+
 .zone-name {
   overflow: visible;
   text-align: center;

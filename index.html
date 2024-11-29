@@ -65,7 +65,7 @@
 
     <!-- Block Controls -->
     <div id="block-controls">
-      <button class="control-button" id="add-block-btn" onclick="addBlock(activeZone, activeDay)">Add Block</button>
+      <button id="remove-block" class="control-button" onclick="removeBlock(activeZone)">Remove Block</button>
       <label for="block-type">Block Type:</label>
       <select id="block-type" onchange="changeBlockType(activeZone, event)"></select>
 
@@ -77,7 +77,7 @@
       <label for="end-time">End Time:</label>
       <input type="time" id="end-time" onchange="updateEndTime(activeZone, this.value)">
 
-      <button class="control-button" onclick="removeBlock(activeZone)">Remove Block</button>
+      <button class="control-button" id="add-block-btn" onclick="addBlock(activeZone, activeDay)">Add Block</button>
     </div>
 
     <!-- Modal Window -->

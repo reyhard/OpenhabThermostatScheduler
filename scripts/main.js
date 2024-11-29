@@ -195,18 +195,29 @@ function renderTimeline(zone) {
   }
 }
 
-function getBlockColorClass(temperature) {
-  if (temperature > 22) return "temp-high";
-  if (temperature >= 20) return "temp-normal";
-  if (temperature < 16) return "temp-low";
-  return "temp-medium";
-}
-
 function selectBlock(zone, index) {
   selectedBlockIndex = index;
   activeZone = zone;
   window.activeZone = activeZone;
 
+  const startTimeControl = document.getElementById("start-time");
+  const endTimeControl = document.getElementById("end-time");
+  const blockTypeControl = document.getElementById("block-type");
+  const removeButton = document.getElementById("remove-block");
+
+  if (selectedBlockIndex === 0) {
+    // Disable controls if the first block is selected
+    startTimeControl.disabled = true;
+    endTimeControl.disabled = true;
+    blockTypeControl.disabled = true;
+    removeButton.disabled = true;
+  } else if (selectedBlockIndex !== null) {
+    // Enable controls for other blocks
+    startTimeControl.disabled = false;
+    endTimeControl.disabled = false;
+    blockTypeControl.disabled = false;
+    removeButton.disabled = false;
+  }
   Object.keys(schedules).forEach(otherZone => {
     const otherTimeline = document.getElementById(schedules[otherZone]["TimelineName"]);
     if (otherTimeline) {
@@ -514,6 +525,11 @@ async function loadAllSchedules() {
     });
   });
 
+  Object.keys(schedules).forEach(zone => {
+    daysOfWeek.forEach(day => {
+      loadScheduleForDay(zone, day, rules);
+    });
+  });
   console.log('Schedules for all zones and days loaded.');
 }
 
