@@ -33,7 +33,7 @@
 }
 
 /* Modal Window */
-#zone-settings-modal {
+#block-settings-modal {
   display: none;
   position: fixed;
   top: 50%;
@@ -49,13 +49,13 @@
 }
 
 /* Modal Title */
-#zone-settings-modal h2 {
+#block-settings-modal h2 {
   width: 100%;
   margin-bottom: 15px;
 }
 
 /* Dropdown */
-#zone-select-modal {
+#block-select-modal {
   width: 100%;
   margin-bottom: 15px;
 }
@@ -69,7 +69,7 @@
 }
 
 /* Modal Buttons */
-#save-zone-settings-modal,
+#save-block-settings-modal,
 #close-modal {
   padding: 8px 16px;
   margin-right: 10px;

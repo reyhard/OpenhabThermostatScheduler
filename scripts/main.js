@@ -2,31 +2,31 @@ import { saveRule, deleteRule, getRules, getItemState, updateItemState  } from '
 
 let schedules = {
 
-  Zone1: { TimelineName: "timeline1", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone2: { TimelineName: "timeline2", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone3: { TimelineName: "timeline3", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone4: { TimelineName: "timeline4", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
-  Zone5: { TimelineName: "timeline5", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone1: { TimelineName: "timeline1", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone2: { TimelineName: "timeline2", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone3: { TimelineName: "timeline3", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone4: { TimelineName: "timeline4", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
+  Zone5: { TimelineName: "timeline5", Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
 };
 
 const blockTypesOnOff = [
-  { id: 'OFF', displayName: 'Off', temperature: 0, color: '#842614', type: "state", command: 'OFF', icon: 'fa-snowflake'},
-  { id: 'ON', displayName: 'On', temperature: 1, color: '#428451', type: "state", command: 'ON', icon: 'fa-fire' },
+  { id: 'OFF', displayName: 'Off', temperature: 0, color: '#842614', type: "state", script: '', command: 'OFF', icon: 'fa-snowflake'},
+  { id: 'ON', displayName: 'On', temperature: 1, color: '#428451', type: "state", script: '', command: 'ON', icon: 'fa-fire' },
 ];
 const blockTypes = [
   ...blockTypesOnOff,
-  { id: 'NIGHT', displayName: 'Night (15°C)', temperature: 15, color: '#95a5a6', type: "temp", command: '15', icon: 'fa-moon' },
-  { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', type: "temp", command: '16', icon: 'fa-person-hiking' },
-  { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', type: "temp", command: '20', icon: 'fa-house' },
-  { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', type: "temp", command: '21', icon: 'fa-computer' },
-  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', type: "temp", command: '23', icon: 'fa-power-off' }
+  { id: 'NIGHT', displayName: 'Night (15°C)', temperature: 15, color: '#95a5a6', type: "temp", script: '', command: '15', icon: 'fa-moon' },
+  { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', type: "temp", script: '', command: '16', icon: 'fa-person-hiking' },
+  { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', type: "temp", script: '', command: '20', icon: 'fa-house' },
+  { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', type: "temp", script: '', command: '21', icon: 'fa-computer' },
+  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', type: "temp", script: '', command: '23', icon: 'fa-power-off' }
 ];
 const zones = [
-  { zoneName: "Zone1", blocksAvaiable: blockTypesOnOff, id: 'general', name: 'Generalna', scriptItem: 'Thermostat_HeatingZone_Control_Cfg' },
-  { zoneName: "Zone2", blocksAvaiable: blockTypes, id: 'kitchen', name: 'Kuchnia',   scriptItem: 'Thermostat_HeatingZone_Kitchen_Cfg' },
-  { zoneName: "Zone3", blocksAvaiable: blockTypes, id: 'living-room', name: 'Salon', scriptItem: 'Thermostat_HeatingZone_LivingRoom_Cfg' },
-  { zoneName: "Zone4", blocksAvaiable: blockTypes, id: 'bedroom', name: 'Sypialnia', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
-  { zoneName: "Zone5", blocksAvaiable: blockTypes, id: 'bathroom', name: 'Łazienka', scriptItem: 'Thermostat_HeatingZone_Bathroom_Cfg' }
+  { zoneName: "Zone1", defaultBlock: 'OFF', blocksAvaiable: blockTypesOnOff, id: 'general', name: 'Generalna',  itemState: 'Thermostat_HeatingZone_Control_State', itemTemp: ''  },
+  { zoneName: "Zone2", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'kitchen', name: 'Kuchnia',   itemState: 'Thermostat_HeatingZone_Kitchen_State', itemTemp: 'Thermostat_HeatingZone_Kitchen'  },
+  { zoneName: "Zone3", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'living-room', name: 'Salon', itemState: 'Thermostat_HeatingZone_LivingRoom_State', itemTemp: 'Thermostat_HeatingZone_LivingRoom'  },
+  { zoneName: "Zone4", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'bedroom', name: 'Sypialnia', itemState: 'Thermostat_HeatingZone_Bedroom_State', itemTemp: 'Thermostat_HeatingZone_Bedroom'  },
+  { zoneName: "Zone5", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'bathroom', name: 'Łazienka', itemState: 'Thermostat_HeatingZone_Bathroom_State', itemTemp: 'Thermostat_HeatingZone_Bathroom'  }
 ];
 const zoneNames = ['Generalna', 'Kuchnia', 'Salon', 'Sypialnia', 'Łazienka'];
 
@@ -50,6 +50,52 @@ function parseAndEvaluate(setting, dynamicContext = {}) {
     throw error;
   }
 }
+async function saveBlockScriptsToOpenHab() {
+  // Collect scripts from blocks
+  const blockScripts = blockTypes.map((block) => ({
+    id: block.id,
+    script: block.script || '',
+  }));
+
+  try {
+    // Convert the block scripts to JSON format
+    const scriptsJSON = JSON.stringify(blockScripts, null, 2);
+
+    await updateItemState("Thermostat_Blocks_Settings", scriptsJSON); // Save script to OpenHab
+    console.log(`Block settings saved`);
+  } catch (error) {
+    console.error(`Failed to save block settings:`, error);
+  }
+}
+async function loadBlockScriptsFromOpenHab() {
+  try {
+    // Use your existing `getItemState` function to fetch the current OpenHab state
+    const scriptsJSON = await getItemState("Thermostat_Blocks_Settings");
+
+    if (!scriptsJSON || scriptsJSON.trim() === "" || scriptsJSON.trim() === "NULL") {
+      return; // Exit early if there's no data to process
+    }
+
+    // Parse the JSON string to get the array of block scripts
+    const blockScripts = JSON.parse(scriptsJSON);
+
+    // Assign scripts to the appropriate blocks
+    blockScripts.forEach((block) => {
+      const matchingBlock = blockTypes.find((b) => b.id === block.id);
+      if (matchingBlock) {
+        matchingBlock.script = block.script;
+      }
+    });
+
+    console.log("Block scripts loaded successfully");
+  } catch (error) {
+    console.error("Failed to load block scripts:", error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadBlockScriptsFromOpenHab(); // Load existing scripts from OpenHab
+});
 
 function populateBlockTypeDropdown(dropdownId, zone) {
   const dropdown = document.getElementById(dropdownId);
@@ -114,10 +160,15 @@ function addBlock(zone, day) {
     return;
   }
 
+
+  const zoneData = zones.find(z => z.zoneName === zone);
+  const blockData = blockTypes.find((b) => b.id === zoneData.defaultBlock);
+
+  // Add first
   const block = {
     id: blocks.length,
-    type: "NIGHT",
-    temperature: 15,
+    type: blockData.id,
+    temperature: blockData.temperature,
     startTime: blocks.length > 0 ? findMiddleTime(blocks[blocks.length - 1].startTime, blocks[blocks.length - 1].endTime) : "00:00",
     endTime: "06:00"
   };
@@ -401,8 +452,10 @@ function convertCronToTime(cronExpression) {
 // Function to create a rule for each block via openHAB REST API
 async function saveBlockAsRule(block, zone, day) {
   if (block.id == 0) { return } // Skip first block
+  const zoneData = zones.find(z => z.zoneName === zone);
+  const blockData = blockTypes.find((b) => b.id === block.type);
   const cronExpression = convertTimeToCron(block.startTime, day);
-  const scriptData = parseAndEvaluate(schedules[zone]["script"],{block})
+  const scriptData = parseAndEvaluate(blockData.script,{blockData, zoneData})
   const ruleData = {
     uid: `schedule_${zone}_${day}_${block.id}`, // Unique identifier
     name: `Heating Schedule for ${zone}, ${day} at ${block.temperature}°C`,
@@ -602,12 +655,13 @@ addZoneNames(zoneNames);
 document.querySelectorAll('[id^="time-indicators"]').forEach(element => {
   createTimeIndicators(element.id);
 });
+
 Object.keys(schedules).forEach(zone => renderTimeline(zone));
 
 console.log(schedules); // Output: "10:00"
 
 const settingsButton = document.getElementById('settings-button');
-const modal = document.getElementById('zone-settings-modal');
+const modal = document.getElementById('block-settings-modal');
 const overlay = document.getElementById('modal-overlay');
 const closeModalButton = document.getElementById('close-modal');
 
@@ -615,7 +669,7 @@ const closeModalButton = document.getElementById('close-modal');
 settingsButton.addEventListener('click', () => {
   modal.style.display = 'block';
   overlay.style.display = 'block';
-  populateZoneSelect(); // Populate dropdown with zone names
+  populateBlockSelect(); // Populate dropdown with zone names
 });
 
 // Close the modal
@@ -630,65 +684,54 @@ overlay.addEventListener('click', () => {
   overlay.style.display = 'none';
 });
 
-function populateZoneSelect() {
-  const zoneSelect = document.getElementById('zone-select-modal');
-  zoneSelect.innerHTML = zones.map(zone => `<option value="${zone.id}">${zone.name}</option>`).join('');
+function populateBlockSelect() {
+  const blockSelect = document.getElementById('block-select-modal');
+  blockSelect.innerHTML = blockTypes.map(block => `<option value="${block.id}">${block.displayName}</option>`).join('');
 
   // Trigger a change event to load the first zone's script
-  zoneSelect.dispatchEvent(new Event('change'));
+  blockSelect.dispatchEvent(new Event('change'));
 }
 const scriptTextarea = document.getElementById('script-textarea-modal');
-const saveZoneSettingsButton = document.getElementById('save-zone-settings-modal');
+const saveBlockSettingsButton = document.getElementById('save-block-settings-modal');
 
 // Load the selected zone's script into the editor
-document.getElementById('zone-select-modal').addEventListener('change', (event) => {
+document.getElementById('block-select-modal').addEventListener('change', (event) => {
   const selectedZoneId = event.target.value;
-  const zone = zones.find(z => z.id === selectedZoneId);
-  if (zone) {
-    loadZoneSettings(zone)
+  const block = blockTypes.find(z => z.id === selectedZoneId);
+  if (block) {
+    loadBlockSettings(block)
   }
 });
 
-async function initializeZoneSettings(zones) {
-  for (const zone of zones) {
-    try {
-      await loadZoneSettings(zone);
-    } catch (error) {
-      console.error(`Error loading settings for zone ${zone.name}:`, error);
-    }
+
+async function loadBlockSettings(block) {
+  try {
+    console.log(`Loaded script for zone ${block.displayName}:`, block.script);
+    scriptTextarea.value = block.script;
+  } catch (error) {
+    console.error(`Failed to load settings for zone ${block.displayName}:`, error);
   }
 }
 
-async function loadZoneSettings(zone) {
+async function saveBlockSettings(block, script) {
   try {
-    const script = await getItemState(zone.scriptItem); // Fetch script from OpenHab
-    console.log(`Loaded script for zone ${zone.name}:`, script);
-    scriptTextarea.value = script;
-    schedules[zone.zoneName]["script"] = script;
+    block.script = script
+    saveBlockScriptsToOpenHab()
+    console.log(`Settings saved for zone ${block.displayName}`);
   } catch (error) {
-    console.error(`Failed to load settings for zone ${zone.name}:`, error);
-  }
-}
-
-async function saveZoneSettings(zone, script) {
-  try {
-    await updateItemState(zone.scriptItem, script); // Save script to OpenHab
-    console.log(`Settings saved for zone ${zone.name}`);
-  } catch (error) {
-    console.error(`Failed to save settings for zone ${zone.name}:`, error);
+    console.error(`Failed to save settings for zone ${block.displayName}:`, error);
   }
 }
 
 // Save on script update
-saveZoneSettingsButton.addEventListener('click', () => {
-  const selectedZoneId = document.getElementById('zone-select-modal').value;
-  const zone = zones.find(z => z.id === selectedZoneId);
+saveBlockSettingsButton.addEventListener('click', () => {
+  const selectedBlockId = document.getElementById('block-select-modal').value;
+  const block = blockTypes.find(z => z.id === selectedBlockId);
   const updatedScript = scriptTextarea.value;
-  if (zone) {
-    saveZoneSettings(zone,updatedScript);
+  if (block) {
+    saveBlockSettings(block,updatedScript);
   }
 });
-initializeZoneSettings(zones)
 
 
 // Open the modal window
