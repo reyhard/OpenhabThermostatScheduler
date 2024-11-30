@@ -6,6 +6,76 @@
   font-family: Arial, sans-serif;
 }
 
+/* Settings Button Container */
+#settings-button-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Settings Button */
+#settings-button {
+  padding: 8px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Modal Overlay */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Modal Window */
+#zone-settings-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  height: 60%;
+}
+
+/* Modal Title */
+#zone-settings-modal h2 {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Dropdown */
+#zone-select-modal {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Textarea */
+#script-textarea-modal {
+  width: 100%;
+  height: 75%;
+  margin-bottom: 15px;
+  resize: none;
+}
+
+/* Modal Buttons */
+#save-zone-settings-modal,
+#close-modal {
+  padding: 8px 16px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
 /* Days selection container */
 #days-selector {
   display: flex;
@@ -199,16 +269,6 @@
   background-color: #0056b3;
 }
 
-#zone-settings-modal h2 {
-  margin-top: 0;
-  font-size: 1.5em;
-  color: #333;
-}
-
-#zone-settings-modal textarea {
-  font-family: monospace;
-  font-size: 1em;
-}
 .modal {
   display: none;
   position: fixed;

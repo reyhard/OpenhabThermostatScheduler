@@ -9,23 +9,27 @@ let schedules = {
   Zone5: { TimelineName: "timeline5", script: '', Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [] },
 };
 
+const blockTypesOnOff = [
+  { id: 'OFF', displayName: 'Off', temperature: 0, color: '#842614', type: "state", command: 'OFF', icon: 'fa-snowflake'},
+  { id: 'ON', displayName: 'On', temperature: 1, color: '#428451', type: "state", command: 'ON', icon: 'fa-fire' },
+];
+const blockTypes = [
+  ...blockTypesOnOff,
+  { id: 'NIGHT', displayName: 'Night (15°C)', temperature: 15, color: '#95a5a6', type: "temp", command: '15', icon: 'fa-moon' },
+  { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', type: "temp", command: '16', icon: 'fa-person-hiking' },
+  { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', type: "temp", command: '20', icon: 'fa-house' },
+  { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', type: "temp", command: '21', icon: 'fa-computer' },
+  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', type: "temp", command: '23', icon: 'fa-power-off' }
+];
 const zones = [
-  { zoneName: "Zone1", id: 'general', name: 'Generalna', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
-  { zoneName: "Zone2", id: 'kitchen', name: 'Kuchnia',  scriptItem: 'Thermostat_HeatingZone_Kitchen_Cfg' },
-  { zoneName: "Zone3", id: 'living-room', name: 'Salon', scriptItem: 'Thermostat_HeatingZone_LivingRoom_Cfg' },
-  { zoneName: "Zone4", id: 'bedroom', name: 'Sypialnia', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
-  { zoneName: "Zone5", id: 'bathroom', name: 'Łazienka', scriptItem: 'Thermostat_HeatingZone_Bathroom_Cfg' }
+  { zoneName: "Zone1", blocksAvaiable: blockTypesOnOff, id: 'general', name: 'Generalna', scriptItem: 'Thermostat_HeatingZone_Control_Cfg' },
+  { zoneName: "Zone2", blocksAvaiable: blockTypes, id: 'kitchen', name: 'Kuchnia',   scriptItem: 'Thermostat_HeatingZone_Kitchen_Cfg' },
+  { zoneName: "Zone3", blocksAvaiable: blockTypes, id: 'living-room', name: 'Salon', scriptItem: 'Thermostat_HeatingZone_LivingRoom_Cfg' },
+  { zoneName: "Zone4", blocksAvaiable: blockTypes, id: 'bedroom', name: 'Sypialnia', scriptItem: 'Thermostat_HeatingZone_Bedroom_Cfg' },
+  { zoneName: "Zone5", blocksAvaiable: blockTypes, id: 'bathroom', name: 'Łazienka', scriptItem: 'Thermostat_HeatingZone_Bathroom_Cfg' }
 ];
 const zoneNames = ['Generalna', 'Kuchnia', 'Salon', 'Sypialnia', 'Łazienka'];
-const blockTypes = [
-  { id: 'OFF', displayName: 'Off', temperature: 0, color: '#842614', command: 'OFF', icon: 'fa-snowflake'},
-  { id: 'ON', displayName: 'On', temperature: 1, color: '#428451', command: 'ON', icon: 'fa-fire' },
-  { id: 'NIGHT', displayName: 'Night (15°C)', temperature: 15, color: '#95a5a6', command: '15', icon: 'fa-moon' },
-  { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', command: '16', icon: 'fa-person-hiking' },
-  { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', command: '20', icon: 'fa-house' },
-  { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', command: '21', icon: 'fa-computer' },
-  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', command: '23', icon: 'fa-power-off' }
-];
+
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 let activeDay = 'Monday';
 let activeZone = 'Zone1';
@@ -47,18 +51,27 @@ function parseAndEvaluate(setting, dynamicContext = {}) {
   }
 }
 
-function populateBlockTypeDropdown(dropdownId) {
+function populateBlockTypeDropdown(dropdownId, zone) {
   const dropdown = document.getElementById(dropdownId);
 
   // Clear existing options
   dropdown.innerHTML = '';
 
-  // Populate options dynamically
-  blockTypes.forEach(block => {
+  // Find the selected zone's block types
+  const zoneData = zones.find(z => z.zoneName === zone);
+  if (!zoneData) {
+    console.error(`Zone ${zone} not found`);
+    return;
+  }
+
+  const permittedBlocks = zoneData.blocksAvaiable;
+
+  // Populate options dynamically for permitted blocks
+  permittedBlocks.forEach(block => {
     const option = document.createElement('option');
     option.value = block.id;
     option.textContent = block.displayName;
-    //option.style.color = block.color; // Optional: Add color for visual feedback
+
     dropdown.appendChild(option);
   });
 }
@@ -228,8 +241,10 @@ function selectBlock(zone, index) {
   });
 
   const blocks = schedules[zone][activeDay];
+  populateBlockTypeDropdown('block-type',zone);
   document.getElementById("block-type").value = blocks[index].type;
   renderTimeline(zone);
+
 }
 
 function changeBlockType(zone, event) {
@@ -710,7 +725,6 @@ async function confirmCopySchedule() {
 loadAllSchedules();
 selectDay();
 
-populateBlockTypeDropdown('block-type');
 
 window.addBlock = addBlock;
 window.removeBlock = removeBlock;
