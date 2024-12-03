@@ -19,10 +19,10 @@ const blockTypes = [
   { id: 'AWAY', displayName: 'Away (16°C)', temperature: 16, color: '#867555', type: "temp", script: '', command: '16', icon: 'fa-person-hiking' },
   { id: 'HOME', displayName: 'Home (20°C)', temperature: 20, color: '#c48946', type: "temp", script: '', command: '20', icon: 'fa-house' },
   { id: 'HO', displayName: 'HO (21°C)', temperature: 21, color: '#f49f16', type: "temp", script: '', command: '21', icon: 'fa-computer' },
-  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', type: "temp", script: '', command: '23', icon: 'fa-power-off' }
+  { id: 'WARM', displayName: 'Warm (23°C)', temperature: 23, color: '#e74c3c', type: "temp", script: '', command: '23', icon: 'fa-temperature-high' }
 ];
 const zones = [
-  { zoneName: "Zone1", defaultBlock: 'OFF', blocksAvaiable: blockTypesOnOff, id: 'general', name: 'Generalna',  itemState: 'Thermostat_HeatingZone_Control_State', itemTemp: ''  },
+  { zoneName: "Zone1", defaultBlock: 'OFF', blocksAvaiable: blockTypesOnOff, id: 'general', name: 'Generalna',  itemState: 'Thermostat_HeatingZone_Control', itemTemp: ''  },
   { zoneName: "Zone2", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'kitchen', name: 'Kuchnia',   itemState: 'Thermostat_HeatingZone_Kitchen_State', itemTemp: 'Thermostat_HeatingZone_Kitchen'  },
   { zoneName: "Zone3", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'living-room', name: 'Salon', itemState: 'Thermostat_HeatingZone_LivingRoom_State', itemTemp: 'Thermostat_HeatingZone_LivingRoom'  },
   { zoneName: "Zone4", defaultBlock: 'NIGHT', blocksAvaiable: blockTypes, id: 'bedroom', name: 'Sypialnia', itemState: 'Thermostat_HeatingZone_Bedroom_State', itemTemp: 'Thermostat_HeatingZone_Bedroom'  },
@@ -34,6 +34,23 @@ const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sat
 let activeDay = 'Monday';
 let activeZone = 'Zone1';
 let selectedBlockIndex = null; // Track selected block index
+
+function showNotification(message, type = "success") {
+  const notificationContainer = document.getElementById("notification-container");
+
+  // Create a new notification element
+  const notification = document.createElement("div");
+  notification.className = `notification ${type}`; // Apply success or error styling
+  notification.innerText = message;
+
+  // Append the notification to the container
+  notificationContainer.appendChild(notification);
+
+  // Automatically remove the notification after a delay
+  setTimeout(() => {
+    notification.remove();
+  }, 4000); // 4 seconds (matches CSS animation)
+}
 
 function parseAndEvaluate(setting, dynamicContext = {}) {
   try {
@@ -49,77 +66,6 @@ function parseAndEvaluate(setting, dynamicContext = {}) {
     console.error('Failed to evaluate dynamically:', error);
     throw error;
   }
-}
-async function saveBlockScriptsToOpenHab() {
-  // Collect scripts from blocks
-  const blockScripts = blockTypes.map((block) => ({
-    id: block.id,
-    script: block.script || '',
-  }));
-
-  try {
-    // Convert the block scripts to JSON format
-    const scriptsJSON = JSON.stringify(blockScripts, null, 2);
-
-    await updateItemState("Thermostat_Blocks_Settings", scriptsJSON); // Save script to OpenHab
-    console.log(`Block settings saved`);
-  } catch (error) {
-    console.error(`Failed to save block settings:`, error);
-  }
-}
-async function loadBlockScriptsFromOpenHab() {
-  try {
-    // Use your existing `getItemState` function to fetch the current OpenHab state
-    const scriptsJSON = await getItemState("Thermostat_Blocks_Settings");
-
-    if (!scriptsJSON || scriptsJSON.trim() === "" || scriptsJSON.trim() === "NULL") {
-      return; // Exit early if there's no data to process
-    }
-
-    // Parse the JSON string to get the array of block scripts
-    const blockScripts = JSON.parse(scriptsJSON);
-
-    // Assign scripts to the appropriate blocks
-    blockScripts.forEach((block) => {
-      const matchingBlock = blockTypes.find((b) => b.id === block.id);
-      if (matchingBlock) {
-        matchingBlock.script = block.script;
-      }
-    });
-
-    console.log("Block scripts loaded successfully");
-  } catch (error) {
-    console.error("Failed to load block scripts:", error);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadBlockScriptsFromOpenHab(); // Load existing scripts from OpenHab
-});
-
-function populateBlockTypeDropdown(dropdownId, zone) {
-  const dropdown = document.getElementById(dropdownId);
-
-  // Clear existing options
-  dropdown.innerHTML = '';
-
-  // Find the selected zone's block types
-  const zoneData = zones.find(z => z.zoneName === zone);
-  if (!zoneData) {
-    console.error(`Zone ${zone} not found`);
-    return;
-  }
-
-  const permittedBlocks = zoneData.blocksAvaiable;
-
-  // Populate options dynamically for permitted blocks
-  permittedBlocks.forEach(block => {
-    const option = document.createElement('option');
-    option.value = block.id;
-    option.textContent = block.displayName;
-
-    dropdown.appendChild(option);
-  });
 }
 
 function getPreviousDay(day) {
@@ -156,10 +102,9 @@ function selectDay(day = null) {
 function addBlock(zone, day) {
   const blocks = schedules[zone][day];
   if (blocks.length >= 6) {
-    alert("You can only add up to 6 blocks.");
+    showNotification("You can only add up to 6 blocks.", "error");
     return;
   }
-
 
   const zoneData = zones.find(z => z.zoneName === zone);
   const blockData = blockTypes.find((b) => b.id === zoneData.defaultBlock);
@@ -195,6 +140,7 @@ function addZoneNames(zoneNames) {
     }
   });
 }
+
 function renderTimeline(zone) {
   const timeline = document.getElementById(schedules[zone]["TimelineName"]);
   timeline.innerHTML = ""; // Clear existing blocks
@@ -458,7 +404,7 @@ async function saveBlockAsRule(block, zone, day) {
   const scriptData = parseAndEvaluate(blockData.script,{blockData, zoneData})
   const ruleData = {
     uid: `schedule_${zone}_${day}_${block.id}`, // Unique identifier
-    name: `Heating Schedule for ${zone}, ${day} at ${block.temperature}°C`,
+    name: `Heating Schedule for ${zoneData.name}, ${day} - ${blockData.displayName}`,
     description: `${block.type}`,
     tags: ["Schedule", "Heating"],
     triggers: [
@@ -604,7 +550,7 @@ async function loadAllSchedules() {
 
 async function saveScheduleDay(day) {
   Object.keys(schedules).forEach(zone => saveSchedule(zone,day));
-  alert(`Schedule for ${day} saved!`);
+  showNotification(`Schedule for ${day} saved`);
 }
 
 async function saveSchedule(zone,day) {
@@ -703,6 +649,77 @@ document.getElementById('block-select-modal').addEventListener('change', (event)
   }
 });
 
+async function saveBlockScriptsToOpenHab() {
+  // Collect scripts from blocks
+  const blockScripts = blockTypes.map((block) => ({
+    id: block.id,
+    script: block.script || '',
+  }));
+
+  try {
+    // Convert the block scripts to JSON format
+    const scriptsJSON = JSON.stringify(blockScripts, null, 2);
+
+    await updateItemState("Thermostat_Blocks_Settings", scriptsJSON); // Save script to OpenHab
+    console.log(`Block settings saved`);
+  } catch (error) {
+    console.error(`Failed to save block settings:`, error);
+  }
+}
+async function loadBlockScriptsFromOpenHab() {
+  try {
+    // Use your existing `getItemState` function to fetch the current OpenHab state
+    const scriptsJSON = await getItemState("Thermostat_Blocks_Settings");
+
+    if (!scriptsJSON || scriptsJSON.trim() === "" || scriptsJSON.trim() === "NULL") {
+      return; // Exit early if there's no data to process
+    }
+
+    // Parse the JSON string to get the array of block scripts
+    const blockScripts = JSON.parse(scriptsJSON);
+
+    // Assign scripts to the appropriate blocks
+    blockScripts.forEach((block) => {
+      const matchingBlock = blockTypes.find((b) => b.id === block.id);
+      if (matchingBlock) {
+        matchingBlock.script = block.script;
+      }
+    });
+
+    console.log("Block scripts loaded successfully");
+  } catch (error) {
+    console.error("Failed to load block scripts:", error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadBlockScriptsFromOpenHab(); // Load existing scripts from OpenHab
+});
+
+function populateBlockTypeDropdown(dropdownId, zone) {
+  const dropdown = document.getElementById(dropdownId);
+
+  // Clear existing options
+  dropdown.innerHTML = '';
+
+  // Find the selected zone's block types
+  const zoneData = zones.find(z => z.zoneName === zone);
+  if (!zoneData) {
+    console.error(`Zone ${zone} not found`);
+    return;
+  }
+
+  const permittedBlocks = zoneData.blocksAvaiable;
+
+  // Populate options dynamically for permitted blocks
+  permittedBlocks.forEach(block => {
+    const option = document.createElement('option');
+    option.value = block.id;
+    option.textContent = block.displayName;
+
+    dropdown.appendChild(option);
+  });
+}
 
 async function loadBlockSettings(block) {
   try {
@@ -717,7 +734,8 @@ async function saveBlockSettings(block, script) {
   try {
     block.script = script
     saveBlockScriptsToOpenHab()
-    console.log(`Settings saved for zone ${block.displayName}`);
+
+    showNotification(`Settings saved for zone ${block.displayName}`);
   } catch (error) {
     console.error(`Failed to save settings for zone ${block.displayName}:`, error);
   }
@@ -749,7 +767,7 @@ async function confirmCopySchedule() {
   const toDay = document.getElementById('targetDay').value;
 
   if (activeDay === toDay) {
-    alert("You cannot copy the schedule to the same day!");
+    showNotification("You cannot copy the schedule to the same day.", "error");
     closeCopyModal();
     return;
   }
@@ -761,8 +779,7 @@ async function confirmCopySchedule() {
 
   // Save the copied schedule
   await saveScheduleDay(toDay);
-
-  alert(`Schedule successfully copied from ${activeDay} to ${toDay}!`);
+  showNotification(`Schedule successfully copied from ${activeDay} to ${toDay}!`);
   closeCopyModal();
 }
 loadAllSchedules();

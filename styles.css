@@ -79,6 +79,7 @@
 /* Days selection container */
 #days-selector {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-bottom: 20px;
@@ -128,7 +129,6 @@
 /* Timeline container */
 .timeline-container {
   position: relative;
-  width: 100%;
   border: 2px solid #ccc; /* Add a border around each timeline */
   border-radius: 8px; /* Optional: round the corners */
   margin-bottom: 16px; /* Space between zones */
@@ -195,13 +195,15 @@
 .time-indicator .label {
   position: absolute;
   top: 20px; /* Space for text below the line */
+  left: -0%;
+  transform: translateX(-15%);
 }
 
 .time-indicator .long-line,
 .time-indicator .short-line {
   position: absolute;
   top: 0;
-  left: 12px;
+  left: 31%;
   transform: translateX(0%);
   width: 3px;
   background-color: #000000;
@@ -302,4 +304,44 @@
 .close:focus {
   color: black;
   text-decoration: none;
+}
+#notification-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.notification {
+  background-color: #4caf50; /* Success green */
+  color: white;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeOut 4s forwards;
+  text-align: center;
+}
+
+.notification.error {
+  background-color: #f44336; /* Error red */
+}
+
+/* Fade-out effect */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
 }
